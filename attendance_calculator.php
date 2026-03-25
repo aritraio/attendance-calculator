@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Kolkata');
 
-$days_routine = [
+$default_routine = [
     'Monday' => 0,
     'Tuesday' => 7,
     'Wednesday' => 7,
@@ -14,6 +14,7 @@ $days_routine = [
 $result = null;
 $error = null;
 $default_date = date('Y-m-d');
+$days_routine = $default_routine;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $total_classes = isset($_POST['total_classes']) ? (int)$_POST['total_classes'] : 0;
@@ -21,6 +22,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $leave_days = isset($_POST['leave_days']) ? (int)$_POST['leave_days'] : 0;
     $start_date = isset($_POST['start_date']) ? $_POST['start_date'] : $default_date;
     $attended_during_leave = isset($_POST['attended_during_leave']) ? (int)$_POST['attended_during_leave'] : 0;
+    
+    // Read custom routine
+    foreach ($default_routine as $day => $default_val) {
+        $input_name = 'routine_' . strtolower($day);
+        if (isset($_POST[$input_name])) {
+            $days_routine[$day] = max(0, (int)$_POST[$input_name]);
+        }
+    }
     
     if ($attended_classes > $total_classes) {
         $error = "Attended classes cannot be greater than total classes.";
@@ -203,11 +212,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             color: var(--primary);
         }
 
-        .routine-info {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 1.25rem;
-            letter-spacing: 0.02em;
+        .routine-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--input-bg);
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .routine-grid-item label {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .routine-grid-item input {
+            padding: 0.4rem;
+            text-align: center;
+            font-size: 0.9rem;
+            background: #ffffff;
         }
 
         .btn {
@@ -320,6 +345,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 border-left: none;
                 border-right: none;
             }
+            .routine-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .routine-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
     </style>
 </head>
@@ -356,7 +390,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <div class="routine-section">
-                <div class="routine-title">Leave Details</div>
+                <div class="routine-title">Weekly Routine (Classes per day)</div>
+                <div class="routine-grid">
+                    <?php foreach ($days_routine as $day => $classes): ?>
+                        <div class="routine-grid-item">
+                            <label for="routine_<?= strtolower($day) ?>"><?= substr($day, 0, 3) ?></label>
+                            <input type="number" id="routine_<?= strtolower($day) ?>" name="routine_<?= strtolower($day) ?>" min="0" required 
+                                   value="<?= htmlspecialchars($classes) ?>">
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="routine-title" style="margin-top: 2rem;">Leave Details</div>
                 <div class="form-row" style="margin-bottom: 0;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label for="start_date">Start Date</label>
@@ -376,10 +421,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="number" id="attended_during_leave" name="attended_during_leave" min="0" 
                            value="<?= isset($_POST['attended_during_leave']) && $_POST['attended_during_leave'] !== '' ? htmlspecialchars($_POST['attended_during_leave']) : '' ?>"
                            placeholder="0">
-                </div>
-                
-                <div class="routine-info">
-                    Routine: Mon(0) &middot; Tue(7) &middot; Wed(7) &middot; Thu(4) &middot; Fri(7) &middot; Sat(7) &middot; Sun(0)
                 </div>
             </div>
 
